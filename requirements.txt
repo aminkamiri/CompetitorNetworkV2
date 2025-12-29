@@ -1,0 +1,5 @@
+pandas
+requests
+selenium
+html2text
+PyYAML

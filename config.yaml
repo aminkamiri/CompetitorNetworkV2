@@ -1,0 +1,28 @@
+#overwite settings
+overwrite_downloaded_files: false
+overwrite_text_files: false
+overwrite_extracted_files: false
+
+#input settings
+input_csv: "csro_compustat_fulldata.csv"
+sic_codes: "3550,3281" # , *
+email: "info@DataStrategizer.com"
+company_name: "Data Strategizer"
+cik_column: "cik"
+sic_column: "sic"
+
+#main folders
+filings_dir: "data/filings"
+results_dir: "data/results"
+issues_dir: "data/issues"
+log_dir: "data/logs"
+#subfolders for each step in the process
+download_sub: "downloads"
+text_sub: "text"
+extracted_paragraphs_sub: "extracted_competitors_paragraphs"
+
+#extraction settings
+extraction_words_file: "Config/competitor_words.txt"
+token_separators_file: "Config/token_seprators.txt"
+
+    
