@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import re
+import time
 import yaml
 import pandas as pd
 
@@ -79,36 +80,48 @@ class CompetitorsParagraphExtractor:
         txt = ".\n\n".join(paragraphs_with_words)
         return txt
     
-    def process_sic_code(self, sic_code):
+    def process_sic_code(self, sic_code, global_start_index=0, global_total_files=0, global_start_time=None):
         """
         Process all text files for a given SIC code.
         
         Args:
             sic_code: SIC code to process
+            global_start_index: Starting index for global progress
+            global_total_files: Total number of files across all SIC codes
+            global_start_time: Timestamp when the global process started
         """
         input_sic_dir = self.input_dir / str(sic_code)
         output_sic_dir = self.output_dir / str(sic_code)
         
         if not input_sic_dir.exists():
             print(f"No files found for SIC code {sic_code}")
-            return
+            return 0
         
         output_sic_dir.mkdir(parents=True, exist_ok=True)
         
         txt_files = list(input_sic_dir.glob('*.txt'))
+        local_total = len(txt_files)
         print(f"Processing {len(txt_files)} files for SIC code {sic_code}...")
         
         results = []
         
-        for txt_file in txt_files:
-            print(f"Extracting competitors paragraphs from {txt_file.name}...")
+        for i, txt_file in enumerate(txt_files):
+            file_start_time = time.time()
+            global_current = global_start_index + i + 1
+            files_left = global_total_files - global_current
+            
+            elapsed_total = time.time() - global_start_time if global_start_time else 0
+            elapsed_str = time.strftime("%H:%M:%S", time.gmtime(elapsed_total))
+            
+            progress_info = f"[SIC: {i+1}/{local_total}] [Global: {global_current}/{global_total_files} | Left: {files_left}] [Elapsed: {elapsed_str}]"
+            print(f"{progress_info} Extracting competitors paragraphs from {txt_file.name}..." + " " * 20, end='\r')
             
             # Save extracted paragraphs
             output_filename = txt_file.stem + '.txt'
             output_filepath = output_sic_dir / output_filename
             
             if not self.overwrite and output_filepath.exists():
-                print(f"Skipping {txt_file.name}, extracted file already exists.")
+                # print(f"  > Skipping {txt_file.name}, extracted file already exists.")
                 # Still collect sizes if possible
                 with open(txt_file, 'r', encoding='utf-8') as f:
                     txt = f.read()
@@ -145,7 +158,10 @@ class CompetitorsParagraphExtractor:
                 'extracted_file_size': extracted_file_size
             })
             
-        print(f"Completed processing SIC code {sic_code}")
+            file_duration = time.time() - file_start_time
+            # print(f"  > Completed {txt_file.name} in {file_duration:.2f}s")
+            
+        print(f"\nCompleted processing SIC code {sic_code}")
         
         # Save the DataFrame to CSV
         results_df = pd.DataFrame(results)
@@ -154,6 +170,7 @@ class CompetitorsParagraphExtractor:
         csv_file = results_path / f"{sic_code}.csv"
         results_df.to_csv(csv_file, index=False)
         print(f"Saved results to {csv_file}")
+        return local_total
 
 def main():
     # Load configuration from YAML file
@@ -180,12 +197,26 @@ def main():
     # Initialize extractor
     extractor = CompetitorsParagraphExtractor(input_dir=FILINGS_TEXT, output_dir=FILINGS_EXTRACTED, results_dir=RESULTS_DIR, extracted_sub=EXTRACTED_SUB, competitor_words_file=competitor_words_file, token_separators_file=token_separators_file, overwrite=overwrite_extracted_files)
     
+    # Calculate total files to process
+    print("Calculating total files...")
+    total_files = 0
+    for sic_code in SIC_CODES:
+        sic_dir = Path(FILINGS_TEXT) / str(sic_code)
+        if sic_dir.exists():
+            total_files += len(list(sic_dir.glob('*.txt')))
+    
+    print(f"Total files to process across {len(SIC_CODES)} SIC codes: {total_files}")
+    
+    global_processed = 0
+    global_start_time = time.time()
+    
     # Process each SIC code
     for sic_code in SIC_CODES:
         print(f"\n{'='*80}")
         print(f"Processing SIC code: {sic_code}")
         print(f"{'='*80}")
-        extractor.process_sic_code(sic_code)
+        processed_count = extractor.process_sic_code(sic_code, global_processed, total_files, global_start_time)
+        global_processed += processed_count
     
     print("\n" + "="*80)
     print("Competitors paragraphs extraction complete!")
@@ -194,4 +225,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

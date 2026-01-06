@@ -2,10 +2,11 @@
 overwrite_downloaded_files: false
 overwrite_text_files: false
 overwrite_extracted_files: false
+llm_overwrite: false
 
 #input settings
 input_csv: "csro_compustat_fulldata.csv"
-sic_codes: "3550,3281" # , *
+sic_codes: "2834, 2836, 3674" # "*" , "3550,3281"
 email: "info@DataStrategizer.com"
 company_name: "Data Strategizer"
 cik_column: "cik"
@@ -20,9 +21,19 @@ log_dir: "data/logs"
 download_sub: "downloads"
 text_sub: "text"
 extracted_paragraphs_sub: "extracted_competitors_paragraphs"
-
+llm_sub: "llm"
 #extraction settings
 extraction_words_file: "Config/competitor_words.txt"
 token_separators_file: "Config/token_seprators.txt"
+#llm settings
+openai_key_file: "C:/Auth/openai_key.txt"
+llm_model_name: "gpt-4o-mini" #"gpt-3.5-turbo", "gpt-4o", "gpt-4o-mini"
+llm_max_no_tokens: 20000 #16195 = 16385 - 190 for 3.5; 20000; 128000 for 4o, if you send a 127,000-token prompt to GPT-4o, the model only has 1,000 tokens left to generate a response before hitting the 128k limit
+llm_template: |
+  A paragraph from 10-K file of a company will be passed to you. Extract from it all competitors that are mentioned by this article. 
+
+  Do not extract the name of the customers or suppliers. If no competitors are mentioned that's fine - you don't need to extract any! Just return an empty list.
+
+  Do not make up or guess ANY extra information. Only extract what exactly is in the text.
 
     

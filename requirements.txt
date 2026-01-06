@@ -3,3 +3,9 @@ requests
 selenium
 html2text
 PyYAML
+pydantic
+langchain
+tiktoken
+openai
+langchain-openai
+langchain-core
