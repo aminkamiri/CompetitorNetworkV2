@@ -5,23 +5,28 @@ overwrite_extracted_files: false
 llm_overwrite: false
 
 #input settings
-input_csv: "csro_compustat_fulldata.csv"
-sic_codes: "2834, 2836, 3674" # "*" , "3550,3281"
+input_csv: "csro_compustat_fulldata.csv" #"cusipfull_cik.csv"
+sic_codes: "3674" #"2833, 2834, 2835, 2836, 3570, 3571, 3572, 3575, 3576, 3577, 3578, 3579, 3661, 3663, 3669, 3678, 3670, 3679, 3672, 3674, 3677, 3821, 3822, 3823, 3824, 3825, 3826, 3827, 3829, 3841, 3842, 3843, 3844, 3845, 4812, 4813, 4899, 7370, 7371, 7372, 7373, 7374, 7377, 8731, 8734" #"2834, 2836, 3674" # "*" , "3550,3281"
 email: "info@DataStrategizer.com"
 company_name: "Data Strategizer"
 cik_column: "cik"
 sic_column: "sic"
+company_name_column: "conm"
+tic_column: "tic"
 
 #main folders
 filings_dir: "data/filings"
 results_dir: "data/results"
 issues_dir: "data/issues"
 log_dir: "data/logs"
+dict_dir: "data/dict"
+
 #subfolders for each step in the process
 download_sub: "downloads"
 text_sub: "text"
 extracted_paragraphs_sub: "extracted_competitors_paragraphs"
 llm_sub: "llm"
+map_sub: "mapped"
 #extraction settings
 extraction_words_file: "Config/competitor_words.txt"
 token_separators_file: "Config/token_seprators.txt"
