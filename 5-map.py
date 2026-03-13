@@ -45,7 +45,7 @@ def replace_with_cik(x):
     for name in x.split('|'):
         if starts_with_capital(name):
             try:
-                name=get_uniform_format_company_name(name)
+                name=get_uniform_format_company_name(name, strip_suffixes=True)
             except:
                 print(x)
             if name in dict_maps:

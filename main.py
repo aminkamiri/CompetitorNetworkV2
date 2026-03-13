@@ -14,9 +14,11 @@ def run_script(script_name):
 def main():
     # List of scripts to run in sequence
     scripts = [
-        "1-SECFilingsDownloader.py",
+        # "1-SECFilingsDownloader.py",
         "2-SECFilingTextExtractor.py",
-        "3-SECFilingParagraphExtractor.py"
+        "3-SECFilingParagraphExtractor.py",
+        "4-LLMCompetitorExtractor.py",
+        "5-map.py"
     ]
     
     for script in scripts:

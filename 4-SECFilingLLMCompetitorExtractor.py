@@ -199,7 +199,7 @@ class LLMCompetitorExtractor:
         sic_start_time = time.time()
         
         for file_idx, txt_file in enumerate(files_to_process, 1):
-            file_start_time = time.time()
+            cik_start_time = time.time()
             
             print(f"[{file_idx}/{num_files_to_process}] Processing: {txt_file.name}")
             
@@ -207,14 +207,19 @@ class LLMCompetitorExtractor:
                 with open(txt_file, 'r', encoding='utf-8') as f:
                     txt = f.read()
                 
+                # Measure LLM extraction time separately
+                llm_start_time = time.time()
                 competitors = self.extract_competitors(txt)
+                llm_time = time.time() - llm_start_time
                 
+                file_start_time = time.time()
                 new_row = {'filename': txt_file.name, 'competitors': competitors}
                 existing_results = pd.concat([existing_results, pd.DataFrame([new_row])], ignore_index=True)
                 existing_results.to_csv(results_csv, index=False)
-                
                 file_time = time.time() - file_start_time
-                self.total_processing_time += file_time
+
+                cik_time = time.time() - cik_start_time
+                self.total_processing_time += cik_time
                 self.total_texts_processed += 1
                 
                 avg_time_per_file = self.total_processing_time / self.total_texts_processed
@@ -227,8 +232,8 @@ class LLMCompetitorExtractor:
                 
                 eta_seconds = avg_time_per_file * (num_files_to_process - file_idx)
                 
-                print(f"  ✓ Completed in {file_time:.2f}s")
-                print(f"  📊 Stats: {self.total_llm_calls} LLM calls | Avg: {avg_time_per_file:.2f}s/file")
+                print(f"  ✓  Total time:{cik_time:.2f}s |LLM Time: {llm_time:.2f}s | File Time: {file_time:.2f}s")
+                print(f"  📊 Stats: Size: {len(txt)} chars | {self.total_llm_calls} LLM calls | Avg: {avg_time_per_file:.2f}s/file")
                 print(f"  ⏱️  ETA for this SIC: {self.format_time(eta_seconds)}")
                 print()
                 

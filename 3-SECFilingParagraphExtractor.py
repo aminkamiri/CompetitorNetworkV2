@@ -44,27 +44,118 @@ class CompetitorsParagraphExtractor:
         """
         words = re.sub(f"[{self.token_separators}]", " ", s).split()
         return set(words)
-    
+
     def find_paragraphs_with_words(self, text, words, paragraph_separator):
         """
-        Find paragraphs containing specified words.
-        
-        Args:
-            text: The text to search
-            words: List of words to search for
-            paragraph_separator: Separator for paragraphs
-            
-        Returns:
-            List of paragraphs containing the words
+        Finds paragraphs containing specified words and returns clean, 
+        non-redundant snippets.
         """
+        # 1. Clean the word list: unique words, lowercased, escaped for Regex
+        unique_words = sorted(list(set(w.lower() for w in words)), key=len, reverse=True)
+        if not unique_words:
+            return []
+
+        # 2. Build a regex pattern with word boundaries \b to avoid sub-word matches
+        # Example: r'\b(competitors|competitor|compete|rival)\b'
+        pattern = re.compile(r'\b(' + '|'.join(map(re.escape, unique_words)) + r')\b', re.IGNORECASE)
+        
         paragraphs = text.split(paragraph_separator)
         result = []
+
         for paragraph in paragraphs:
-            paragraph = paragraph.replace('\n', ' ')
-            word_set = self.return_tokens(paragraph.lower())
-            if any(word.lower() in word_set for word in words):
-                result.append(paragraph)
+            if not paragraph.strip():
+                continue
+                
+            # Find all match positions in one pass
+            matches = list(pattern.finditer(paragraph))
+            if not matches:
+                continue
+
+            # 3. Calculate snippet boundaries and merge overlaps
+            intervals = []
+            for m in matches:
+                start = max(m.start() - 100, 0)
+                end = min(m.end() + 1000, len(paragraph))
+                intervals.append([start, end])
+
+            # Merge overlapping intervals (classic interval merging algorithm)
+            merged = []
+            if intervals:
+                intervals.sort()
+                curr_start, curr_end = intervals[0]
+                for next_start, next_end in intervals[1:]:
+                    if next_start <= curr_end:  # Overlap found
+                        curr_end = max(curr_end, next_end)
+                    else:
+                        merged.append((curr_start, curr_end))
+                        curr_start, curr_end = next_start, next_end
+                merged.append((curr_start, curr_end))
+
+            # 4. Extract snippets and add ellipses
+            for start, end in merged:
+                snippet = paragraph[start:end]
+                if start > 0:
+                    snippet = "..." + snippet.lstrip()
+                if end < len(paragraph):
+                    snippet = snippet.rstrip() + "..."
+                result.append(snippet)
+
         return result
+
+    # def find_paragraphs_with_words(self, text, words, paragraph_separator):
+    #     """
+    #     Find paragraphs containing specified words.
+        
+    #     Args:
+    #         text: The text to search
+    #         words: List of words to search for
+    #         paragraph_separator: Separator for paragraphs
+            
+    #     Returns:
+    #         List of snippets from paragraphs containing the words. Each
+    #         snippet includes up to 100 characters before each matching
+    #         word and up to 500 characters after it (ellipses added if the
+    #         paragraph is trimmed).
+    #     """
+    #     paragraphs = text.split(paragraph_separator)
+    #     result = []
+    #     for paragraph in paragraphs:
+    #         # paragraph = paragraph.replace('\n', ' ')
+    #         word_set = self.return_tokens(paragraph.lower())
+    #         if any(word.lower() in word_set for word in words):
+    #             # paragraph contains at least one of the words; instead of
+    #             # returning the entire paragraph we build snippets around all
+    #             # occurrences.  the requirement is to include up to 100
+    #             # chars before the match and 500 chars after the match.
+                
+    #             low_par = paragraph.lower()
+    #             snippets_in_para = []
+                
+    #             for word in words:
+    #                 w = word.lower()
+    #                 # Find all occurrences of the word
+    #                 start_idx = 0
+    #                 while True:
+    #                     idx = low_par.find(w, start_idx)
+    #                     if idx == -1:
+    #                         break
+                        
+    #                     # compute snippet boundaries
+    #                     snippet_start = max(idx - 100, 0)
+    #                     snippet_end = min(idx + len(w) + 1000, len(paragraph))
+    #                     snippet = paragraph[snippet_start:snippet_end]
+                        
+    #                     # add ellipses when truncated to indicate context
+    #                     if snippet_start > 0:
+    #                         snippet = "..." + snippet
+    #                     if snippet_end < len(paragraph):
+    #                         snippet = snippet + "..."
+                        
+    #                     snippets_in_para.append(snippet)
+    #                     start_idx = idx + 1
+                
+    #             result.extend(snippets_in_para)
+    #     return result
     
     def extract_competitors_paragraphs(self, txt):
         """
@@ -76,10 +167,44 @@ class CompetitorsParagraphExtractor:
         Returns:
             Extracted paragraphs joined by .\n\n
         """
-        paragraphs_with_words = self.find_paragraphs_with_words(txt, self.competitor_words, '\n\n')
-        txt = ".\n\n".join(paragraphs_with_words)
-        return txt
+        # if txt.count('\n\n') < 30:
+        #     paragraph_separator = '\n'
+        # else:
+        #     paragraph_separator = '\n\n'
+        paragraph_separator = '\n\n'
+        # txt_clean = self.clean_text(txt)
+        txt_clean = txt
+        paragraphs_with_words = self.find_paragraphs_with_words(txt_clean, self.competitor_words, paragraph_separator)
+        par = ".\n\n".join(paragraphs_with_words)
+        # if len(par)/len(txt) > 0.9:
+        #     print("Warning: Extracted paragraphs are more than 90% of the original text. This might indicate an issue with the extraction process.")
+
+        return par
     
+    def clean_text(self, text):
+        """
+        Clean text by removing unwanted lines using regex.
+        
+        Args:
+            text: The extracted text to clean
+            
+        Returns:
+            Cleaned text
+        """
+
+        text = text.replace('Inc.\n', 'Inc. ').replace('Corp.\n', 'Corp. ')#.replace('Table of Contents', '')
+        
+        # 1. Remove "Table of Contents" lines (handles optional 's', case insensitive)
+        text = re.sub(r'^\s*table of content[s]?\s*$', '', text, flags=re.IGNORECASE | re.MULTILINE)
+
+        # 2. Remove lines containing only numbers or "Page X"
+        text = re.sub(r'^\s*(page[-\s]*\d+[-\d]*|\d+)\s*$', '', text, flags=re.IGNORECASE | re.MULTILINE)
+
+        # 3. Clean up resulting empty lines (optional but recommended)
+        text = re.sub(r'\n\s*\n', '\n', text)
+                
+        return text
+
     def process_sic_code(self, sic_code, global_start_index=0, global_total_files=0, global_start_time=None):
         """
         Process all text files for a given SIC code.
@@ -144,10 +269,11 @@ class CompetitorsParagraphExtractor:
             
             txt_file_size = len(txt)
             # Clean the text
-            txt = txt.replace('Inc.\n', 'Inc. ').replace('Table of Contents', '').replace('Corp.\n', 'Corp. ')
             
             competitors_paragraphs = self.extract_competitors_paragraphs(txt)
-            
+            # if len(competitors_paragraphs)/len(txt) > 0.9:
+            #     print("Warning: Extracted paragraphs are more than 90% of the original text. This might indicate an issue with the extraction process.")
+
             with open(output_filepath, 'w', encoding='utf-8') as f:
                 f.write(competitors_paragraphs)
             extracted_file_size = len(competitors_paragraphs)
@@ -155,7 +281,8 @@ class CompetitorsParagraphExtractor:
             results.append({
                 'txt_file': txt_file.name,
                 'txt_file_size': txt_file_size,
-                'extracted_file_size': extracted_file_size
+                'extracted_file_size': extracted_file_size,
+                'double_enter_count': txt.count('\n\n')
             })
             
             file_duration = time.time() - file_start_time
@@ -165,6 +292,7 @@ class CompetitorsParagraphExtractor:
         
         # Save the DataFrame to CSV
         results_df = pd.DataFrame(results)
+        results_df['prc'] = results_df['extracted_file_size'] / results_df['txt_file_size'] * 100
         results_path = self.results_dir / self.extracted_sub
         results_path.mkdir(parents=True, exist_ok=True)
         csv_file = results_path / f"{sic_code}.csv"

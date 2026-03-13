@@ -110,30 +110,7 @@ class SECFilingTextExtractor:
         h.ignore_tables = False
         markdown = h.handle(content_html)
         
-        return markdown
-    
-    
-    def clean_extracted_text(self, text):
-        """
-        Clean extracted text by removing unwanted lines using regex.
-        
-        Args:
-            text: The extracted text to clean
-            
-        Returns:
-            Cleaned text
-        """
-        # Remove lines containing only "Table of contents" (case insensitive, with spaces)
-        text = re.sub(r'^\n\s*table of content[s]?\s*\n$', '', text, flags= re.IGNORECASE)
-        
-        # Remove lines containing page numbers (standalone numbers or "page" followed by numbers/dashes)
-        text = re.sub(r'^\n\s*(page[-\s]*\d+[-\d]*|\d+)\s*\n$', '', text, flags= re.IGNORECASE)
-        
-        # Remove extra blank lines that might result from removals
-        # text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
-        
-        return text
-    
+        return markdown    
     
     def process_sic_code(self, sic_code, global_start_index=0, global_total_files=0, global_start_time=None):
         """

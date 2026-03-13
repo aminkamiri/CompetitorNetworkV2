@@ -318,7 +318,10 @@ class SECFilingsDownloader:
         for idx, row in sic_df.iterrows():
             cik = row[cik_col]
             self.log(f"Processing CIK {cik}...")
-            
+            if cik != 886328:
+                continue
+            else:
+                print("dddd")
             # Get filings for this CIK
             filings, error = self.get_company_filings(cik)
             

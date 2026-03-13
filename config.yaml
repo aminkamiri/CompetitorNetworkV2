@@ -1,11 +1,11 @@
 #overwite settings
 overwrite_downloaded_files: false
 overwrite_text_files: false
-overwrite_extracted_files: false
+overwrite_extracted_files: true
 llm_overwrite: false
 
 #input settings
-input_csv: "csro_compustat_fulldata.csv" #"cusipfull_cik.csv"
+input_csv: "" #"csro_compustat_fulldata.csv" #"cusipfull_cik.csv"
 sic_codes: "3674" #"2833, 2834, 2835, 2836, 3570, 3571, 3572, 3575, 3576, 3577, 3578, 3579, 3661, 3663, 3669, 3678, 3670, 3679, 3672, 3674, 3677, 3821, 3822, 3823, 3824, 3825, 3826, 3827, 3829, 3841, 3842, 3843, 3844, 3845, 4812, 4813, 4899, 7370, 7371, 7372, 7373, 7374, 7377, 8731, 8734" #"2834, 2836, 3674" # "*" , "3550,3281"
 email: "info@DataStrategizer.com"
 company_name: "Data Strategizer"
