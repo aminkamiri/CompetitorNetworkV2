@@ -39,7 +39,7 @@ def abbreviate_string(input_string):
 
 def create_dict(sic_file, col_cik,col_company_name, col_tic, dict_map_file):
     company_name_to_cik={}
-    df=pd.read_csv(sic_file, dtype={col_cik: str},index_col=0)
+    df=pd.read_csv(sic_file, dtype={col_cik: str})#,index_col=0)
     print(len(df))
     df=df.loc[pd.notna(df[col_cik])]
     df[col_cik] = df[col_cik].str.zfill(10)
@@ -380,7 +380,7 @@ def create_dict(sic_file, col_cik,col_company_name, col_tic, dict_map_file):
     df.sort_values([col_cik,col_company_name]).to_csv(dict_map_file)
 
     # path='data/cik_list/'
-    df=pd.read_csv(sic_file,index_col=0)
+    df=pd.read_csv(sic_file)#,index_col=0)
     print(len(df))
     df=df.loc[pd.notna(df[col_cik])]
     print(len(df))

@@ -140,6 +140,85 @@ class SECFilingsDownloader:
             response.raise_for_status()
             data = response.json()
             
+            all_filings = []
+            
+            # Helper function to extract filings from a "recent" style object
+            def extract_from_recent(recent_obj):
+                forms = recent_obj.get('form', [])
+                filing_dates = recent_obj.get('filingDate', [])
+                report_dates = recent_obj.get('reportDate', [])
+                accession_numbers = recent_obj.get('accessionNumber', [])
+                primary_documents = recent_obj.get('primaryDocument', [])
+                
+                for i, form in enumerate(forms):
+                    if form in form_types:
+                        accession = accession_numbers[i].replace('-', '')
+                        filing_info = {
+                            'cik': cik,
+                            'form_type': form,
+                            'filing_date': filing_dates[i],
+                            'report_date': report_dates[i] if i < len(report_dates) else None,
+                            'accession_number': accession_numbers[i],
+                            'primary_document': primary_documents[i],
+                            'href': f'https://www.sec.gov/Archives/edgar/data/{cik}/{accession}/{primary_documents[i]}'
+                        }
+                        all_filings.append(filing_info)
+            
+            # Extract from the main file's recent section
+            recent = data.get('filings', {}).get('recent', {})
+            extract_from_recent(recent)
+            
+            # Check for older filings (overflow files)
+            older_files = data.get('filings', {}).get('files', [])
+            for file_info in older_files:
+                older_url = f"{self.base_url}/submissions/{file_info['name']}"
+                try:
+                    time.sleep(0.1)  # Respect rate limits
+                    older_response = requests.get(older_url, headers=self.headers, timeout=30)
+                    older_response.raise_for_status()
+                    older_data = older_response.json()
+                    
+                    # Extract from overflow file (same structure as recent)
+                    extract_from_recent(older_data)
+                except requests.exceptions.RequestException as e:
+                    self.log(f"Error fetching overflow file {older_url} for CIK {cik}: {e}", level='error')
+                    # Continue processing other files
+            
+            return all_filings, None
+            
+        except requests.exceptions.RequestException as e:
+            error_info = {
+                'cik': cik,
+                'error_type': 'fetch_filings',
+                'error_message': str(e),
+                'url': url,
+                'status_code': response.status_code if response is not None else None
+            }
+            self.log(f"Error fetching filings for CIK {cik}: {e}", level='error')
+            return [], error_info
+    
+    def get_company_filings_old(self, cik, form_types=['10-K', '20-F']):
+        """
+        Get filing information for a specific CIK.
+        
+        Args:
+            cik: Company's CIK number
+            form_types: List of form types to retrieve
+            
+        Returns:
+            Tuple of (filings list, error_info dict or None)
+        """
+        # Pad CIK with zeros to 10 digits
+        cik_padded = str(cik).zfill(10)
+        url = f'{self.base_url}/submissions/CIK{cik_padded}.json'
+        
+        response = None
+        try:
+            time.sleep(0.1)  # SEC rate limiting: 10 requests per second
+            response = requests.get(url, headers=self.headers, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            
             filings = []
             recent = data.get('filings', {}).get('recent', {})
             
@@ -208,7 +287,7 @@ class SECFilingsDownloader:
         
         # Check if file already exists
         if not self.overwrite and filepath.exists():
-            self.log(f"File already exists, skipping: {filename}")
+            self.log(f"SIC({sic_code}): File already exists, skipping: {filename}")
             with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
             result = {
@@ -317,11 +396,11 @@ class SECFilingsDownloader:
         
         for idx, row in sic_df.iterrows():
             cik = row[cik_col]
-            self.log(f"Processing CIK {cik}...")
-            if cik != 886328:
-                continue
-            else:
-                print("dddd")
+            self.log(f"SIC({sic_code}): Processing CIK {cik}...")
+            # if cik != 886328:
+            #     continue
+            # else:
+            #     print("dddd")
             # Get filings for this CIK
             filings, error = self.get_company_filings(cik)
             
@@ -334,8 +413,10 @@ class SECFilingsDownloader:
                 download_result, download_error = self.download_filing(filing, sic_code)
                 if download_result:
                     results.append(download_result)
+                    self.log(f"SIC({sic_code}): Successfully downloaded {cik}--{filing}.")
                 if download_error:
                     errors.append(download_error)
+                    self.log(f"SIC({sic_code}): Error downloading {cik}--{filing}.", level='error')
         
         # Save results to CSV
         output_file = output_path / f"{sic_code}.csv"
