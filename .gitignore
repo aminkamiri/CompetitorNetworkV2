@@ -123,3 +123,9 @@ old/
 *.xlsx
 reviewer_release/*
 docs/*
+
+# Keep reviewer_release ignored except for the latest code release.
+!reviewer_release/management_science_competitor_network_v1_lean/
+reviewer_release/management_science_competitor_network_v1_lean/*
+!reviewer_release/management_science_competitor_network_v1_lean/01_codes_latest/
+!reviewer_release/management_science_competitor_network_v1_lean/01_codes_latest/**
