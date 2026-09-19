@@ -37,8 +37,9 @@ def abbreviate_string(input_string):
     
     return abbreviation
 
-def create_dict(sic_file, col_cik,col_company_name, col_tic, dict_map_file):
+def create_dict(sic_file, col_cik, col_gvkey, col_company_name, col_tic, dict_map_file):
     company_name_to_cik={}
+    company_name_to_gvkey={}
     df=pd.read_csv(sic_file, dtype={col_cik: str})#,index_col=0)
     print(len(df))
     df=df.loc[pd.notna(df[col_cik])]
@@ -50,7 +51,8 @@ def create_dict(sic_file, col_cik,col_company_name, col_tic, dict_map_file):
         # edgar_name=tup.edgar_name.strip()
         computesat_name=tup.conm.strip()
         if computesat_name!='':     
-            company_name_to_cik[get_uniform_format_company_name(computesat_name)]=tup.cik
+           company_name_to_cik[get_uniform_format_company_name(computesat_name)]=getattr(tup, col_cik)
+           company_name_to_gvkey[get_uniform_format_company_name(computesat_name)]=getattr(tup, col_gvkey)
     # len(company_name_to_cik),company_name_to_cik
 
     # /DE/ or /dn at the end, add them without those slashes
@@ -376,8 +378,10 @@ def create_dict(sic_file, col_cik,col_company_name, col_tic, dict_map_file):
 
     # # Store company_name_to_cik dictionary
 
-    df=pd.DataFrame(company_name_to_cik.items(),columns=[col_company_name,col_cik])
-    df.sort_values([col_cik,col_company_name]).to_csv(dict_map_file)
+    df_cik = pd.DataFrame(company_name_to_cik.items(), columns=[col_company_name, col_cik])
+    df_gvkey = pd.DataFrame(company_name_to_gvkey.items(), columns=[col_company_name, col_gvkey])
+    df = df_cik.merge(df_gvkey, on=col_company_name, how='outer')
+    df.sort_values([col_company_name]).to_csv(dict_map_file)
 
     # path='data/cik_list/'
     df=pd.read_csv(sic_file)#,index_col=0)
@@ -404,6 +408,7 @@ def main():
     INPUT_CSV = config['input_csv']
     COMPANY_NAME_COLUMN = config['company_name_column']
     CIK_COLUMN = config['cik_column']
+    GVKEY_COLUMN = config['gvkey_column']
     TIC_COLUMN = config['tic_column']
     # SIC_COLUMN = config['sic_column']
     
@@ -413,6 +418,6 @@ def main():
     DICT_DIR.mkdir(parents=True, exist_ok=True)
     dict_map_file= str(DICT_DIR) + '/company_name_to_cik_mapping.csv'
 
-    create_dict(INPUT_CSV,CIK_COLUMN,COMPANY_NAME_COLUMN,TIC_COLUMN, dict_map_file)#cm4['dict_map_file'])
+    create_dict(INPUT_CSV, CIK_COLUMN, GVKEY_COLUMN, COMPANY_NAME_COLUMN, TIC_COLUMN, dict_map_file)#cm4['dict_map_file'])
 
 main()

@@ -1,0 +1,11 @@
+input_csv: C:/Users/mnasiri/Documents/GitHub/CompetitorNetworkV2/data/results/step7_llm_validation/validated_competitor_names.csv
+
+output_csv: "results/step7_llm_validation/validated_competitor_names_step8_final.csv"
+
+issues_csv: "results/step7_llm_validation/step8_reclassification_issues.csv"
+
+llm_model_name: "gpt-4.1-nano"
+
+batch_size: 100
+
+overwrite: true

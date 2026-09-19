@@ -1,0 +1,13 @@
+input_csv: "C:/Users/mnasiri/Documents/GitHub/CompetitorNetworkV2/data/results/descriptives/missing_review/unified_missing_name_review.csv"
+
+results_dir: "C:/Users/mnasiri/Documents/GitHub/CompetitorNetworkV2/data/results"
+issues_dir: "C:/Users/mnasiri/Documents/GitHub/CompetitorNetworkV2/data/issues"
+
+llm_model_name: "gpt-4.1-nano"
+batch_size: 100
+overwrite: true
+
+raw_name_col: "competitor_name"
+sic_col: "sic_files"
+year_col: "years"
+frequency_col: "frequency"

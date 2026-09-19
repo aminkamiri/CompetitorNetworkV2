@@ -12,7 +12,7 @@ import yaml
 import pandas as pd
 
 class SECFilingTextExtractor:
-    def __init__(self, input_dir, output_dir, issues_dir, overwrite=True):
+    def __init__(self, input_dir, output_dir, issues_dir, overwrite=False):
         """
         Initialize the text extractor.
         

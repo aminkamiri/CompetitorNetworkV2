@@ -13,7 +13,7 @@ import time
 from datetime import datetime, timedelta
 
 class LLMCompetitorExtractor:
-    def __init__(self, input_dir, results_dir, issues_dir, llm_sub, openai_key_file, model_name, max_no_tokens, template, overwrite=True):
+    def __init__(self, input_dir, results_dir, issues_dir, llm_sub, openai_key_file, model_name, max_no_tokens, template, overwrite=False):
         """
         Initialize the LLM competitor extractor.
         
@@ -267,7 +267,7 @@ def main():
     ISSUES_DIR = config['issues_dir']
     LLM_SUB = config['llm_sub']
     openai_key_file = config['openai_key_file']
-    overwrite = config.get('llm_overwrite', True)
+    overwrite = config.get('llm_overwrite', False)
     
     # Parse SIC codes
     if sic_codes_str == '*':

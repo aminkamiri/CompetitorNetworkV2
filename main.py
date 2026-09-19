@@ -15,7 +15,7 @@ def main():
     # List of scripts to run in sequence
     scripts = [
         # "0-create dictionaries.py",
-        "1-SECFilingsDownloader.py",
+        # "1-SECFilingsDownloader.py",
         "2-SECFilingTextExtractor.py",
         "3-SECFilingParagraphExtractor.py",
         "4-SECFilingLLMCompetitorExtractor.py",

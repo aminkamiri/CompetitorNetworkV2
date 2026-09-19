@@ -119,3 +119,7 @@ archived_code/
 *test*
 next.txt
 old/
+*.csv
+*.xlsx
+reviewer_release/*
+docs/*

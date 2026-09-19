@@ -21,26 +21,32 @@ LLM_SUB = config['llm_sub']
 LLM_DIR = Path(RESULTS_DIR) / Path(LLM_SUB)
 CIK_COLUMN = config['cik_column']
 COMPANY_NAME_COLUMN = config['company_name_column']
-
+GVKEY_COLUMN = config['gvkey_column']
 
 DICT_DIR = Path(config['dict_dir']) 
 dict_map_file= str(DICT_DIR) + '/company_name_to_cik_mapping.csv'
 df_map=pd.read_csv(dict_map_file, index_col=0)
+print("mapping columns:", df_map.columns.tolist())
 print("mapping dictionary: \n", df_map.head())
 print("to load the dictionary faster, use it on dictionary producing file later ")
-dict_maps={}
+dict_maps_cik={}
+dict_maps_gvkey={}
+
 for idx,row in df_map.iterrows():
-    dict_maps[row[COMPANY_NAME_COLUMN]]=row[CIK_COLUMN]
-print(dict_maps)
+    dict_maps_cik[row[COMPANY_NAME_COLUMN]]=row[CIK_COLUMN]
+    dict_maps_gvkey[row[COMPANY_NAME_COLUMN]]=row[GVKEY_COLUMN]
+
+print(dict_maps_cik)
+print(dict_maps_gvkey)
 
 # If a company name does not start with an UPPERCASE letter, then it must be a mistake by GPT3.5 returning an industry or something
 def starts_with_capital(s):
     return s[0].isupper() if s else False
 
-def replace_with_cik(x):
+def replace_with_mapping(x, dict_maps):
     if pd.isna(x):
         return ''
-    ciks=[]
+    values=[]
     
     for name in x.split('|'):
         if starts_with_capital(name):
@@ -49,14 +55,12 @@ def replace_with_cik(x):
             except:
                 print(x)
             if name in dict_maps:
-                ciks.append(dict_maps[name])
+                values.append(dict_maps[name])
             else:
-                ciks.append(-1)
+                values.append(-1)
         else:
-            # Competitor name doesn't start with capital (likely a typo/industry term)
-            # Add -1 to maintain 1-to-1 mapping with competitors
-            ciks.append(-1)
-    return "|".join(map(str, ciks))
+            values.append(-1)
+    return "|".join(map(str, values))
 
 # Process all CSV files in the LLM output directory
 for csv_path in sorted(LLM_DIR.glob('*.csv')):
@@ -79,8 +83,8 @@ for csv_path in sorted(LLM_DIR.glob('*.csv')):
     print(df_all_competitors)
 
     # create competitors_ciks column
-    df['competitors_ciks']=df['competitors'].apply(lambda x: replace_with_cik(x))
-
+    df['competitors_ciks']=df['competitors'].apply(lambda x: replace_with_mapping(x, dict_maps_cik))
+    df['competitors_gvkeys']=df['competitors'].apply(lambda x: replace_with_mapping(x, dict_maps_gvkey))
     print(df.head())
     mapped_dir = Path('data/results/mapped')
     mapped_dir.mkdir(parents=True, exist_ok=True)
